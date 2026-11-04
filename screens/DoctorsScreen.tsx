@@ -26,7 +26,7 @@ type Doctor = {
 };
 
 const DOCTORS: Doctor[] = [
-  {gi
+  {
     id: '1',
     name: 'Dr. Olivia Turner, M.D.',
     specialty: 'Dermato-Endocrinology',
@@ -87,7 +87,6 @@ export default function DoctorsScreen() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* Шапка */}
         <View style={styles.header}>
           <Image
             source={{ uri: 'https://i.pravatar.cc/200?img=33' }}
@@ -154,7 +153,7 @@ export default function DoctorsScreen() {
           <View style={styles.scheduleCard}>
             <Text style={styles.todayText}>11 Wednesday - Today</Text>
 
-            {TIMES.map((time, i) => (
+            {TIMES.map((time) => (
               <View key={time} style={styles.timeRow}>
                 <Text style={styles.timeLabel}>{time}</Text>
                 <View style={styles.dashedLine} />

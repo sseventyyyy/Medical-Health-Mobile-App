@@ -1,6 +1,6 @@
 import React from 'react';
-import DoctorsScreen from './screens/DoctorsScreen';
+import { AuthNavigator } from './login';
 
 export default function App() {
-  return <DoctorsScreen />;
+  return <AuthNavigator />;
 }
