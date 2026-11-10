@@ -4,7 +4,8 @@ export type ProfileRoute =
   | 'Settings'
   | 'NotificationSetting'
   | 'PasswordManager'
-  | 'PrivacyPolicy';
+  | 'PrivacyPolicy'
+  | 'HelpCenter';
 
 export interface ProfileNavigation {
   navigate: (route: ProfileRoute) => void;

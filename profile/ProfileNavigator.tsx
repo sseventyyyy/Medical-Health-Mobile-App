@@ -6,6 +6,7 @@ import SettingsScreen from './screens/SettingsScreen';
 import NotificationSettingScreen from './screens/NotificationSettingScreen';
 import PasswordManagerScreen from './screens/PasswordManagerScreen';
 import PrivacyPolicyScreen from './screens/PrivacyPolicyScreen';
+import HelpCenterScreen from './screens/HelpCenterScreen';
 import { ProfileNavigation, ProfileRoute } from './types';
 
 interface Props {
@@ -58,6 +59,7 @@ export default function ProfileNavigator({
       )}
       {current === 'PasswordManager' && <PasswordManagerScreen navigation={navigation} />}
       {current === 'PrivacyPolicy' && <PrivacyPolicyScreen navigation={navigation} />}
+      {current === 'HelpCenter' && <HelpCenterScreen navigation={navigation} />}
     </>
   );
 }

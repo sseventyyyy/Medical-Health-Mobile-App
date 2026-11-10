@@ -5,4 +5,5 @@ export { default as SettingsScreen } from './screens/SettingsScreen';
 export { default as NotificationSettingScreen } from './screens/NotificationSettingScreen';
 export { default as PasswordManagerScreen } from './screens/PasswordManagerScreen';
 export { default as PrivacyPolicyScreen } from './screens/PrivacyPolicyScreen';
+export { default as HelpCenterScreen } from './screens/HelpCenterScreen';
 export type { ProfileRoute, ProfileNavigation } from './types';
