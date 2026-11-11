@@ -1,8 +1,12 @@
-import React from 'react';
-import DoctorsScreen from './screens/DoctorsScreen';
-import Home from './screens/Home';
-import Login from './screens/Login';
+import React, { useState } from 'react';
+import { AuthNavigator } from './login';
+import { ProfileNavigator } from './profile';
 
 export default function App() {
-  return <DoctorsScreen />;
+  const [isAuth, setIsAuth] = useState(false);
+
+  if (!isAuth) {
+    return <AuthNavigator onAuthSuccess={() => setIsAuth(true)} />;
+  }
+  return <ProfileNavigator onLogout={() => setIsAuth(false)} />;
 }
