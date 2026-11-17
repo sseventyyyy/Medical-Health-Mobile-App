@@ -29,13 +29,12 @@ export default function ProfileNavigator({
   const [stack, setStack] = useState<ProfileRoute[]>([initialRoute]);
 
   const navigate = useCallback((r: ProfileRoute) => setStack((s) => [...s, r]), []);
+  // onExit вызываем вне setStack: колбэк меняет состояние родителя,
+  // а внутри функции-апдейтера это запрещено.
   const goBack = useCallback(() => {
-    setStack((s) => {
-      if (s.length > 1) return s.slice(0, -1);
-      onExit();
-      return s;
-    });
-  }, [onExit]);
+    if (stack.length > 1) setStack((s) => s.slice(0, -1));
+    else onExit();
+  }, [stack.length, onExit]);
 
   const navigation = useMemo<ProfileNavigation>(
     () => ({ navigate, goBack, onLogout, onTabPress }),

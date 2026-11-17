@@ -1,4 +1,4 @@
-export type AuthRoute = 'LogIn' | 'LogIn2' | 'SignUp' | 'SetPassword';
+export type AuthRoute = 'Welcome' | 'LogIn' | 'LogIn2' | 'SignUp' | 'SetPassword';
 
 export interface AuthNavigation {
   navigate: (route: AuthRoute) => void;

@@ -89,4 +89,4 @@ export function PaymentPage() {
       <Row><PaymentMethod /><AddCard /><ReviewSummary /><PaymentSuccess /></Row>
     </>
   );
-}'
+}

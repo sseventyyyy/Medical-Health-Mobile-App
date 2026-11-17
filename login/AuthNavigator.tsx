@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { StatusBar } from 'expo-status-bar';
+import WelcomeScreen from './screens/WelcomeScreen';
 import LogInScreen from './screens/LogInScreen';
 import LogIn2Screen from './screens/LogIn2Screen';
 import SignUpScreen from './screens/SignUpScreen';
@@ -20,7 +21,7 @@ interface Props {
  */
 export default function AuthNavigator({
   onAuthSuccess = () => {},
-  initialRoute = 'LogIn',
+  initialRoute = 'Welcome',
 }: Props) {
   const [stack, setStack] = useState<AuthRoute[]>([initialRoute]);
 
@@ -42,6 +43,7 @@ export default function AuthNavigator({
   return (
     <>
       <StatusBar style="dark" />
+      {current === 'Welcome' && <WelcomeScreen navigation={navigation} />}
       {current === 'LogIn' && <LogInScreen navigation={navigation} />}
       {current === 'LogIn2' && <LogIn2Screen navigation={navigation} />}
       {current === 'SignUp' && <SignUpScreen navigation={navigation} />}

@@ -6,15 +6,29 @@ interface Props {
   title: string;
   onPress: () => void;
   width?: number | `${number}%`;
+  /** secondary — светло-синяя кнопка с синим текстом (Sign Up на Welcome) */
+  variant?: 'primary' | 'secondary';
 }
 
-export default function PrimaryButton({ title, onPress, width = '70%' }: Props) {
+export default function PrimaryButton({
+  title,
+  onPress,
+  width = '70%',
+  variant = 'primary',
+}: Props) {
+  const secondary = variant === 'secondary';
   return (
     <Pressable
       onPress={onPress}
-      style={({ pressed }) => [styles.button, { width }, pressed && styles.pressed]}
+      accessibilityRole="button"
+      style={({ pressed }) => [
+        styles.button,
+        secondary && styles.secondary,
+        { width },
+        pressed && styles.pressed,
+      ]}
     >
-      <Text style={styles.text}>{title}</Text>
+      <Text style={[styles.text, secondary && styles.secondaryText]}>{title}</Text>
     </Pressable>
   );
 }
@@ -28,6 +42,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  secondary: { backgroundColor: colors.socialBg },
   pressed: { opacity: 0.85 },
   text: { color: colors.white, fontSize: 18, fontWeight: '600' },
+  secondaryText: { color: colors.primary },
 });

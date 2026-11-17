@@ -71,7 +71,19 @@ const DAYS = [
 
 const TIMES = ['9 AM', '10 AM', '11 AM', '12 AM'];
 
-export default function DoctorsScreen() {
+type Tab = 'home' | 'chat' | 'profile' | 'calendar';
+
+interface Props {
+  onTabPress?: (tab: Tab) => void;
+  onNotificationsPress?: () => void;
+  onSettingsPress?: () => void;
+}
+
+export default function DoctorsScreen({
+  onTabPress,
+  onNotificationsPress,
+  onSettingsPress,
+}: Props = {}) {
   const [favorites, setFavorites] = useState<string[]>(['1', '4']);
   const [selectedDay, setSelectedDay] = useState(11);
 
@@ -96,10 +108,20 @@ export default function DoctorsScreen() {
             <Text style={styles.greeting}>Hi, WelcomeBack</Text>
             <Text style={styles.userName}>John Doe</Text>
           </View>
-          <TouchableOpacity style={styles.roundBtn}>
+          <TouchableOpacity
+            style={styles.roundBtn}
+            onPress={onNotificationsPress}
+            accessibilityRole="button"
+            accessibilityLabel="Notifications"
+          >
             <Ionicons name="notifications-outline" size={20} color={BLUE} />
           </TouchableOpacity>
-          <TouchableOpacity style={[styles.roundBtn, { marginLeft: 8 }]}>
+          <TouchableOpacity
+            style={[styles.roundBtn, { marginLeft: 8 }]}
+            onPress={onSettingsPress}
+            accessibilityRole="button"
+            accessibilityLabel="Settings"
+          >
             <Ionicons name="settings-outline" size={20} color={BLUE} />
           </TouchableOpacity>
         </View>
@@ -227,16 +249,16 @@ export default function DoctorsScreen() {
 
       {/* Нижняя навигация */}
       <View style={styles.tabBar}>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => onTabPress?.('home')} accessibilityLabel="home tab">
           <Ionicons name="home-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => onTabPress?.('chat')} accessibilityLabel="chat tab">
           <Ionicons name="chatbubble-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => onTabPress?.('profile')} accessibilityLabel="profile tab">
           <Ionicons name="person-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => onTabPress?.('calendar')} accessibilityLabel="calendar tab">
           <Ionicons name="calendar-outline" size={28} color="#fff" />
         </TouchableOpacity>
       </View>

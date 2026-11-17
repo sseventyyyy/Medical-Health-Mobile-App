@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
-type Tab = 'home' | 'chat' | 'profile' | 'calendar';
+export type Tab = 'home' | 'chat' | 'profile' | 'calendar';
 
 const TABS: { key: Tab; icon: React.ComponentProps<typeof Ionicons>['name'] }[] = [
   { key: 'home', icon: 'home-outline' },
@@ -21,7 +21,14 @@ export default function BottomTabBar({ active = 'profile', onPress }: Props) {
   return (
     <View style={styles.bar}>
       {TABS.map((t) => (
-        <Pressable key={t.key} onPress={() => onPress?.(t.key)} hitSlop={8}>
+        <Pressable
+          key={t.key}
+          onPress={() => onPress?.(t.key)}
+          hitSlop={8}
+          accessibilityRole="button"
+          accessibilityLabel={`${t.key} tab`}
+          accessibilityState={{ selected: active === t.key }}
+        >
           <Ionicons
             name={t.icon}
             size={26}
