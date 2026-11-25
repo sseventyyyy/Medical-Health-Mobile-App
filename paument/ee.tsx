@@ -1,4 +1,4 @@
-import { Phone, Top, Small, Label, Input, Btn, Card, Item, Box, Chips, Title, Row, BLUE } from "./shared";
+import { Phone, Top, Small, Label, Input, Btn, Card, Item, Box, Chips, Title, Row, BLUE } from "../sgared/dd";
 
 function PaymentMethod() {
   return (

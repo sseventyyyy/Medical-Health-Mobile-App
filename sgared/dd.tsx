@@ -88,4 +88,4 @@ export function Chips({ options, start = 0, column = false }: { options: string[
       ))}
     </div>
   );
-}*
+}

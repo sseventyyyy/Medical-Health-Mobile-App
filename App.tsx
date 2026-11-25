@@ -2,6 +2,7 @@ import React, { useCallback, useState } from 'react';
 import { AuthNavigator } from './login';
 import MainNavigator from './src/MainNavigator';
 import SplashScreen from './src/screens/SplashScreen';
+import { AppProvider } from './src/store';
 
 export default function App() {
   const [showSplash, setShowSplash] = useState(true);
@@ -14,5 +15,9 @@ export default function App() {
   if (!isAuth) {
     return <AuthNavigator onAuthSuccess={() => setIsAuth(true)} />;
   }
-  return <MainNavigator onLogout={() => setIsAuth(false)} />;
+  return (
+    <AppProvider>
+      <MainNavigator onLogout={() => setIsAuth(false)} />
+    </AppProvider>
+  );
 }

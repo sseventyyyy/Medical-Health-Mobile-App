@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import ProfileLayout from '../components/ProfileLayout';
 import Avatar from '../components/Avatar';
 import MenuRow from '../components/MenuRow';
@@ -7,20 +7,20 @@ import BottomTabBar from '../components/BottomTabBar';
 import LogoutModal from '../components/LogoutModal';
 import { colors } from '../theme';
 import { ProfileNavigation } from '../types';
+import { pickImage, useApp } from '../../src/store';
 
 interface Props {
   navigation: ProfileNavigation;
-  name?: string;
-  avatarUri?: string;
 }
 
-export default function ProfileScreen({
-  navigation,
-  name = 'John Doe',
-  avatarUri,
-}: Props) {
+export default function ProfileScreen({ navigation }: Props) {
+  const { user, updateUser } = useApp();
   const [showLogout, setShowLogout] = useState(false);
-  const soon = (title: string) => () => Alert.alert(title, 'Раздел в разработке');
+
+  const changePhoto = async () => {
+    const uri = await pickImage(true).catch(() => undefined);
+    if (uri) updateUser({ avatarUri: uri });
+  };
 
   return (
     <ProfileLayout
@@ -29,13 +29,13 @@ export default function ProfileScreen({
       footer={<BottomTabBar active="profile" onPress={navigation.onTabPress} />}
     >
       <View style={styles.top}>
-        <Avatar uri={avatarUri} />
-        <Text style={styles.name}>{name}</Text>
+        <Avatar uri={user.avatarUri} onEdit={changePhoto} />
+        <Text style={styles.name}>{user.name}</Text>
       </View>
 
       <MenuRow icon="person-outline" label="Profile" onPress={() => navigation.navigate('EditProfile')} />
-      <MenuRow icon="heart-outline" label="Favorite" onPress={soon('Favorite')} />
-      <MenuRow icon="wallet-outline" label="Payment Method" onPress={soon('Payment Method')} />
+      <MenuRow icon="heart-outline" label="Favorite" onPress={() => navigation.onOpenFavorites?.()} />
+      <MenuRow icon="wallet-outline" label="Payment Method" onPress={() => navigation.navigate('PaymentMethod')} />
       <MenuRow icon="lock-closed-outline" label="Privacy Policy" onPress={() => navigation.navigate('PrivacyPolicy')} />
       <MenuRow icon="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} />
       <MenuRow icon="help-circle-outline" label="Help" onPress={() => navigation.navigate('HelpCenter')} />

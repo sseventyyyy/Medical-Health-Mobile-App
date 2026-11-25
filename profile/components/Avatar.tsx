@@ -1,16 +1,24 @@
 import React from 'react';
-import { Image, StyleSheet, View } from 'react-native';
+import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
 interface Props {
   uri?: string;
   size?: number;
+  /** Нажатие на аватар / карандаш — смена фото */
+  onEdit?: () => void;
 }
 
-export default function Avatar({ uri, size = 100 }: Props) {
+export default function Avatar({ uri, size = 100, onEdit }: Props) {
   return (
-    <View style={{ width: size, height: size }}>
+    <Pressable
+      style={{ width: size, height: size }}
+      onPress={onEdit}
+      disabled={!onEdit}
+      accessibilityRole="button"
+      accessibilityLabel="Change photo"
+    >
       <View
         style={[styles.circle, { width: size, height: size, borderRadius: size / 2 }]}
       >
@@ -20,10 +28,12 @@ export default function Avatar({ uri, size = 100 }: Props) {
           <Ionicons name="person" size={size * 0.5} color={colors.primary} />
         )}
       </View>
-      <View style={styles.badge}>
-        <Ionicons name="pencil" size={12} color={colors.white} />
-      </View>
-    </View>
+      {onEdit ? (
+        <View style={styles.badge}>
+          <Ionicons name="pencil" size={12} color={colors.white} />
+        </View>
+      ) : null}
+    </Pressable>
   );
 }
 

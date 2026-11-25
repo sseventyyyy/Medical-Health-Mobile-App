@@ -75,12 +75,21 @@ export default function SignUpScreen({ navigation }: { navigation: AuthNavigatio
 
       <Text style={styles.terms}>
         By continuing, you agree to{'\n'}
-        <Text style={styles.link}>Terms of Use</Text> and{' '}
-        <Text style={styles.link}>Privacy Policy.</Text>
+        <Text style={styles.link} onPress={() => navigation.navigate('Terms')}>
+          Terms of Use
+        </Text>{' '}
+        and{' '}
+        <Text style={styles.link} onPress={() => navigation.navigate('Terms')}>
+          Privacy Policy.
+        </Text>
       </Text>
 
       <PrimaryButton title="Sign Up" onPress={submit} width="60%" />
-      <SocialButtons onFingerprint={navigation.onAuthSuccess} />
+      <SocialButtons
+        onGoogle={navigation.onAuthSuccess}
+        onFacebook={navigation.onAuthSuccess}
+        onFingerprint={navigation.onAuthSuccess}
+      />
       <AuthFooterLink
         question="already have an account?"
         action="Log In"

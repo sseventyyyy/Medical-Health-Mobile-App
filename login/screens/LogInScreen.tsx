@@ -53,7 +53,11 @@ export default function LogInScreen({ navigation }: { navigation: AuthNavigation
       </View>
 
       <PrimaryButton title="Log In" onPress={submit} />
-      <SocialButtons onFingerprint={navigation.onAuthSuccess} />
+      <SocialButtons
+        onGoogle={navigation.onAuthSuccess}
+        onFacebook={navigation.onAuthSuccess}
+        onFingerprint={navigation.onAuthSuccess}
+      />
       <AuthFooterLink
         question="Don't have an account?"
         action="Sign Up"

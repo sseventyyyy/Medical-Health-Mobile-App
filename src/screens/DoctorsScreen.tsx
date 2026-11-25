@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import {
+  Alert,
   View,
   Text,
   Image,
@@ -11,106 +12,75 @@ import {
   StatusBar,
 } from 'react-native';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
+import DoctorCard from '../components/DoctorCard';
+import { MainNav } from '../navigation';
+import { DAYS, DOCTORS, TIMES, TODAY, dayName, getDoctor, useApp } from '../store';
 
 const BLUE = '#2F66F5';
 const LIGHT = '#CBD5FF';
 const TEXT_DARK = '#1B1B1F';
 
-type Doctor = {
-  id: string;
-  name: string;
-  specialty: string;
-  rating: string;
-  reviews: number;
-  photo: string;
-};
+const ratingValue = (rating: string) => Number(rating.replace(',', '.'));
 
-const DOCTORS: Doctor[] = [
-  {
-    id: '1',
-    name: 'Dr. Olivia Turner, M.D.',
-    specialty: 'Dermato-Endocrinology',
-    rating: '5',
-    reviews: 60,
-    photo: 'https://i.pravatar.cc/200?img=47',
-  },
-  {
-    id: '2',
-    name: 'Dr. Alexander Bennett, Ph.D.',
-    specialty: 'Dermato-Genetics',
-    rating: '4,5',
-    reviews: 40,
-    photo: 'https://i.pravatar.cc/200?img=12',
-  },
-  {
-    id: '3',
-    name: 'Dr. Sophia Martinez, Ph.D.',
-    specialty: 'Cosmetic Bioengineering',
-    rating: '5',
-    reviews: 150,
-    photo: 'https://i.pravatar.cc/200?img=45',
-  },
-  {
-    id: '4',
-    name: 'Dr. Michael Davidson, M.D.',
-    specialty: 'Nano-Dermatology',
-    rating: '4,8',
-    reviews: 90,
-    photo: 'https://i.pravatar.cc/200?img=15',
-  },
-];
+/** Home: приветствие, календарь с записями и список врачей. */
+export default function DoctorsScreen({ nav }: { nav: MainNav }) {
+  const { user, favorites, toggleFavorite, appointments, setAppointmentStatus } = useApp();
+  const [selectedDay, setSelectedDay] = useState(TODAY);
+  const [query, setQuery] = useState('');
+  const [sortByRating, setSortByRating] = useState(false);
+  const searchRef = useRef<React.ComponentRef<typeof TextInput>>(null);
 
-const DAYS = [
-  { num: 9, label: 'MON', filled: false },
-  { num: 10, label: 'TUE', filled: false },
-  { num: 11, label: 'WED', filled: true },
-  { num: 12, label: 'THU', filled: false },
-  { num: 13, label: 'FRI', filled: true },
-  { num: 14, label: 'SAT', filled: true },
-];
+  const active = appointments.filter((a) => a.status !== 'cancelled');
+  const dayAppointments = active.filter((a) => a.day === selectedDay);
 
-const TIMES = ['9 AM', '10 AM', '11 AM', '12 AM'];
+  const doctors = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    const list = q
+      ? DOCTORS.filter(
+          (d) => d.name.toLowerCase().includes(q) || d.specialty.toLowerCase().includes(q),
+        )
+      : [...DOCTORS];
+    if (sortByRating) list.sort((a, b) => ratingValue(b.rating) - ratingValue(a.rating));
+    return list;
+  }, [query, sortByRating]);
 
-type Tab = 'home' | 'chat' | 'profile' | 'calendar';
-
-interface Props {
-  onTabPress?: (tab: Tab) => void;
-  onNotificationsPress?: () => void;
-  onSettingsPress?: () => void;
-}
-
-export default function DoctorsScreen({
-  onTabPress,
-  onNotificationsPress,
-  onSettingsPress,
-}: Props = {}) {
-  const [favorites, setFavorites] = useState<string[]>(['1', '4']);
-  const [selectedDay, setSelectedDay] = useState(11);
-
-  const toggleFavorite = (id: string) => {
-    setFavorites((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
-  };
+  const confirmCancel = (id: string, doctorName: string) =>
+    Alert.alert('Cancel appointment', `Cancel your visit to ${doctorName}?`, [
+      { text: 'No', style: 'cancel' },
+      { text: 'Yes, cancel', style: 'destructive', onPress: () => setAppointmentStatus(id, 'cancelled') },
+    ]);
 
   return (
     <View style={styles.screen}>
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
       >
         <View style={styles.header}>
-          <Image
-            source={{ uri: 'https://i.pravatar.cc/200?img=33' }}
-            style={styles.userAvatar}
-          />
-          <View style={styles.greetingBox}>
-            <Text style={styles.greeting}>Hi, WelcomeBack</Text>
-            <Text style={styles.userName}>John Doe</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.userBtn}
+            onPress={() => nav.openTab('profile')}
+            accessibilityRole="button"
+            accessibilityLabel="My profile"
+          >
+            {user.avatarUri ? (
+              <Image source={{ uri: user.avatarUri }} style={styles.userAvatar} />
+            ) : (
+              <View style={[styles.userAvatar, styles.avatarEmpty]}>
+                <Ionicons name="person" size={20} color={BLUE} />
+              </View>
+            )}
+            <View style={styles.greetingBox}>
+              <Text style={styles.greeting}>Hi, WelcomeBack</Text>
+              <Text style={styles.userName} numberOfLines={1}>
+                {user.name}
+              </Text>
+            </View>
+          </TouchableOpacity>
           <TouchableOpacity
             style={styles.roundBtn}
-            onPress={onNotificationsPress}
+            onPress={nav.openNotifications}
             accessibilityRole="button"
             accessibilityLabel="Notifications"
           >
@@ -118,7 +88,7 @@ export default function DoctorsScreen({
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.roundBtn, { marginLeft: 8 }]}
-            onPress={onSettingsPress}
+            onPress={nav.openSettings}
             accessibilityRole="button"
             accessibilityLabel="Settings"
           >
@@ -128,20 +98,50 @@ export default function DoctorsScreen({
 
         {/* Быстрые кнопки + поиск */}
         <View style={styles.searchRow}>
-          <TouchableOpacity style={styles.quickBtn}>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() => nav.openDoctors(false)}
+            accessibilityRole="button"
+          >
             <MaterialCommunityIcons name="stethoscope" size={26} color={BLUE} />
             <Text style={styles.quickText}>Doctors</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.quickBtn}>
+          <TouchableOpacity
+            style={styles.quickBtn}
+            onPress={() => nav.openDoctors(true)}
+            accessibilityRole="button"
+          >
             <Ionicons name="heart-outline" size={26} color={BLUE} />
             <Text style={styles.quickText}>Favorite</Text>
           </TouchableOpacity>
           <View style={styles.searchBox}>
-            <View style={styles.filterBtn}>
-              <Ionicons name="options-outline" size={18} color={TEXT_DARK} />
-            </View>
-            <TextInput style={styles.searchInput} />
-            <Ionicons name="search" size={22} color={BLUE} />
+            <TouchableOpacity
+              style={[styles.filterBtn, sortByRating && styles.filterBtnOn]}
+              onPress={() => setSortByRating((v) => !v)}
+              accessibilityRole="button"
+              accessibilityLabel="Sort by rating"
+              accessibilityState={{ selected: sortByRating }}
+            >
+              <Ionicons name="options-outline" size={18} color={sortByRating ? '#fff' : TEXT_DARK} />
+            </TouchableOpacity>
+            <TextInput
+              ref={searchRef}
+              style={styles.searchInput}
+              value={query}
+              onChangeText={setQuery}
+              placeholder="Search doctor"
+              placeholderTextColor="#7C9CFF"
+              returnKeyType="search"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              onPress={() => (query ? setQuery('') : searchRef.current?.focus())}
+              hitSlop={8}
+              accessibilityRole="button"
+              accessibilityLabel={query ? 'Clear search' : 'Search'}
+            >
+              <Ionicons name={query ? 'close' : 'search'} size={22} color={BLUE} />
+            </TouchableOpacity>
           </View>
         </View>
 
@@ -149,7 +149,7 @@ export default function DoctorsScreen({
         <View style={styles.calendarBlock}>
           <View style={styles.daysRow}>
             {DAYS.map((d) => {
-              const active = d.filled;
+              const filled = active.some((a) => a.day === d.num);
               const selected = d.num === selectedDay;
               return (
                 <TouchableOpacity
@@ -157,108 +157,109 @@ export default function DoctorsScreen({
                   onPress={() => setSelectedDay(d.num)}
                   style={[
                     styles.dayChip,
-                    active && styles.dayChipFilled,
-                    selected && styles.dayChipSelected,
+                    filled && styles.dayChipFilled,
+                    selected && (filled ? styles.dayChipSelectedFilled : styles.dayChipSelected),
                   ]}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected }}
                 >
-                  <Text style={[styles.dayNum, active && styles.dayTextWhite]}>
-                    {d.num}
-                  </Text>
-                  <Text style={[styles.dayLabel, active && styles.dayTextWhite]}>
-                    {d.label}
-                  </Text>
+                  <Text style={[styles.dayNum, filled && styles.dayTextWhite]}>{d.num}</Text>
+                  <Text style={[styles.dayLabel, filled && styles.dayTextWhite]}>{d.label}</Text>
                 </TouchableOpacity>
               );
             })}
           </View>
 
           <View style={styles.scheduleCard}>
-            <Text style={styles.todayText}>11 Wednesday - Today</Text>
+            <Text style={styles.todayText}>
+              {dayName(selectedDay)}
+              {selectedDay === TODAY ? ' - Today' : ''}
+            </Text>
 
-            {TIMES.map((time) => (
-              <View key={time} style={styles.timeRow}>
-                <Text style={styles.timeLabel}>{time}</Text>
-                <View style={styles.dashedLine} />
-              </View>
-            ))}
-
-            {/* Запись поверх сетки времени */}
-            <View style={styles.appointment}>
-              <View style={styles.appointmentTop}>
-                <Text style={styles.appointmentName}>Dr. Olivia Turner, M.D.</Text>
-                <View style={styles.appointmentActions}>
-                  <View style={styles.miniCircle}>
-                    <Ionicons name="checkmark" size={10} color="#fff" />
-                  </View>
-                  <View style={[styles.miniCircle, { marginLeft: 4 }]}>
-                    <Ionicons name="close" size={10} color="#fff" />
-                  </View>
+            {TIMES.map((time) => {
+              const a = dayAppointments.find((x) => x.time === time);
+              const doctor = a ? getDoctor(a.doctorId) : null;
+              return (
+                <View key={time} style={styles.timeRow}>
+                  <Text style={styles.timeLabel}>{time}</Text>
+                  {a && doctor ? (
+                    <TouchableOpacity
+                      style={styles.appointment}
+                      activeOpacity={0.8}
+                      onPress={() => nav.openDoctor(doctor.id)}
+                    >
+                      <View style={styles.appointmentTop}>
+                        <Text style={styles.appointmentName} numberOfLines={1}>
+                          {doctor.name}
+                        </Text>
+                        <TouchableOpacity
+                          style={[styles.miniCircle, a.status === 'complete' && styles.miniCircleOn]}
+                          hitSlop={8}
+                          onPress={() =>
+                            setAppointmentStatus(a.id, a.status === 'complete' ? 'upcoming' : 'complete')
+                          }
+                          accessibilityRole="button"
+                          accessibilityLabel={
+                            a.status === 'complete' ? 'Mark as not completed' : 'Mark as completed'
+                          }
+                        >
+                          <Ionicons name="checkmark" size={12} color="#fff" />
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                          style={[styles.miniCircle, { marginLeft: 8 }]}
+                          hitSlop={8}
+                          onPress={() => confirmCancel(a.id, doctor.name)}
+                          accessibilityRole="button"
+                          accessibilityLabel="Cancel appointment"
+                        >
+                          <Ionicons name="close" size={12} color="#fff" />
+                        </TouchableOpacity>
+                      </View>
+                      <Text style={styles.appointmentDesc}>{a.note}</Text>
+                    </TouchableOpacity>
+                  ) : (
+                    <View style={styles.dashedLine} />
+                  )}
                 </View>
-              </View>
-              <Text style={styles.appointmentDesc}>
-                Treatment and prevention of skin and photodermatitis.
-              </Text>
-            </View>
+              );
+            })}
+
+            {dayAppointments.length === 0 ? (
+              <TouchableOpacity onPress={() => nav.openDoctors(false)} style={styles.bookLink}>
+                <Text style={styles.bookLinkText}>No appointments. Book a visit</Text>
+              </TouchableOpacity>
+            ) : null}
           </View>
         </View>
 
         {/* Список врачей */}
         <View style={styles.list}>
-          {DOCTORS.map((doc) => {
-            const fav = favorites.includes(doc.id);
-            return (
-              <View key={doc.id} style={styles.card}>
-                <Image source={{ uri: doc.photo }} style={styles.docPhoto} />
-                <View style={styles.cardRight}>
-                  <View style={styles.nameBox}>
-                    <Text style={styles.docName} numberOfLines={1}>
-                      {doc.name}
-                    </Text>
-                    <Text style={styles.docSpecialty}>{doc.specialty}</Text>
-                  </View>
-                  <View style={styles.cardBottom}>
-                    <View style={styles.pill}>
-                      <Ionicons name="star-outline" size={13} color={BLUE} />
-                      <Text style={styles.pillText}>{doc.rating}</Text>
-                    </View>
-                    <View style={[styles.pill, { marginLeft: 8 }]}>
-                      <Ionicons name="chatbubble-outline" size={13} color={BLUE} />
-                      <Text style={styles.pillText}>{doc.reviews}</Text>
-                    </View>
-                    <View style={{ flex: 1 }} />
-                    <TouchableOpacity style={styles.smallCircle}>
-                      <Text style={styles.questionMark}>?</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.smallCircle, { marginLeft: 6 }]}
-                      onPress={() => toggleFavorite(doc.id)}
-                    >
-                      <Ionicons
-                        name={fav ? 'heart' : 'heart-outline'}
-                        size={14}
-                        color={BLUE}
-                      />
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </View>
-            );
-          })}
+          {doctors.length === 0 ? <Text style={styles.empty}>No doctors found</Text> : null}
+          {doctors.map((doc) => (
+            <DoctorCard
+              key={doc.id}
+              doctor={doc}
+              favorite={favorites.includes(doc.id)}
+              onPress={() => nav.openDoctor(doc.id)}
+              onToggleFavorite={() => toggleFavorite(doc.id)}
+              onChat={() => nav.openChat(doc.id)}
+            />
+          ))}
         </View>
       </ScrollView>
 
       {/* Нижняя навигация */}
       <View style={styles.tabBar}>
-        <TouchableOpacity onPress={() => onTabPress?.('home')} accessibilityLabel="home tab">
-          <Ionicons name="home-outline" size={28} color="#fff" />
+        <TouchableOpacity onPress={() => nav.openTab('home')} accessibilityLabel="home tab">
+          <Ionicons name="home" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => onTabPress?.('chat')} accessibilityLabel="chat tab">
+        <TouchableOpacity onPress={() => nav.openTab('chat')} accessibilityLabel="chat tab">
           <Ionicons name="chatbubble-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => onTabPress?.('profile')} accessibilityLabel="profile tab">
+        <TouchableOpacity onPress={() => nav.openTab('profile')} accessibilityLabel="profile tab">
           <Ionicons name="person-outline" size={28} color="#fff" />
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => onTabPress?.('calendar')} accessibilityLabel="calendar tab">
+        <TouchableOpacity onPress={() => nav.openTab('calendar')} accessibilityLabel="calendar tab">
           <Ionicons name="calendar-outline" size={28} color="#fff" />
         </TouchableOpacity>
       </View>
@@ -277,7 +278,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: (Platform.OS === 'android' ? StatusBar.currentHeight ?? 24 : 54) + 8,
   },
+  userBtn: { flex: 1, flexDirection: 'row', alignItems: 'center' },
   userAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: LIGHT },
+  avatarEmpty: { alignItems: 'center', justifyContent: 'center' },
   greetingBox: { flex: 1, marginLeft: 10 },
   greeting: { fontSize: 12, color: BLUE },
   userName: { fontSize: 15, fontWeight: '600', color: TEXT_DARK },
@@ -318,7 +321,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  searchInput: { flex: 1, paddingHorizontal: 8, fontSize: 14, color: TEXT_DARK },
+  filterBtnOn: { backgroundColor: BLUE },
+  searchInput: { flex: 1, paddingHorizontal: 8, paddingVertical: 0, fontSize: 14, color: TEXT_DARK },
 
   // Календарь
   calendarBlock: {
@@ -339,7 +343,8 @@ const styles = StyleSheet.create({
     borderColor: 'transparent',
   },
   dayChipFilled: { backgroundColor: BLUE },
-  dayChipSelected: { borderColor: '#fff' },
+  dayChipSelected: { borderColor: BLUE },
+  dayChipSelectedFilled: { borderColor: '#fff' },
   dayNum: { fontSize: 22, fontWeight: '500', color: TEXT_DARK },
   dayLabel: { fontSize: 11, color: TEXT_DARK },
   dayTextWhite: { color: '#fff' },
@@ -353,7 +358,7 @@ const styles = StyleSheet.create({
     paddingBottom: 14,
   },
   todayText: { alignSelf: 'flex-end', fontSize: 12, color: BLUE, marginBottom: 2 },
-  timeRow: { flexDirection: 'row', alignItems: 'center', height: 36 },
+  timeRow: { flexDirection: 'row', alignItems: 'center', minHeight: 36, paddingVertical: 3 },
   timeLabel: { width: 44, fontSize: 12, color: BLUE },
   dashedLine: {
     flex: 1,
@@ -363,10 +368,7 @@ const styles = StyleSheet.create({
     borderStyle: 'dashed',
   },
   appointment: {
-    position: 'absolute',
-    left: 58,
-    right: 14,
-    top: 8 + 18 + 36 + 6, // на уровне 10 AM
+    flex: 1,
     backgroundColor: LIGHT,
     borderRadius: 14,
     paddingHorizontal: 10,
@@ -374,57 +376,22 @@ const styles = StyleSheet.create({
   },
   appointmentTop: { flexDirection: 'row', alignItems: 'center' },
   appointmentName: { flex: 1, fontSize: 13, fontWeight: '600', color: BLUE },
-  appointmentActions: { flexDirection: 'row' },
   miniCircle: {
-    width: 14,
-    height: 14,
-    borderRadius: 7,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     backgroundColor: '#8A97C9',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  miniCircleOn: { backgroundColor: BLUE },
   appointmentDesc: { fontSize: 12, color: TEXT_DARK, marginTop: 2 },
+  bookLink: { alignSelf: 'center', marginTop: 6 },
+  bookLinkText: { fontSize: 12, fontWeight: '600', color: BLUE },
 
   // Список врачей
   list: { paddingHorizontal: 12, paddingTop: 14 },
-  card: {
-    flexDirection: 'row',
-    backgroundColor: LIGHT,
-    borderRadius: 18,
-    padding: 10,
-    marginBottom: 10,
-  },
-  docPhoto: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#fff' },
-  cardRight: { flex: 1, marginLeft: 10 },
-  nameBox: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-  },
-  docName: { fontSize: 14, fontWeight: '700', color: BLUE },
-  docSpecialty: { fontSize: 12, color: TEXT_DARK },
-  cardBottom: { flexDirection: 'row', alignItems: 'center', marginTop: 6 },
-  pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    paddingHorizontal: 8,
-    height: 22,
-    minWidth: 48,
-    justifyContent: 'center',
-  },
-  pillText: { fontSize: 12, color: TEXT_DARK, marginLeft: 4 },
-  smallCircle: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  questionMark: { fontSize: 13, fontWeight: '600', color: BLUE },
+  empty: { textAlign: 'center', color: TEXT_DARK, marginVertical: 16 },
 
   // Нижняя навигация
   tabBar: {

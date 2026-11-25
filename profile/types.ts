@@ -5,7 +5,9 @@ export type ProfileRoute =
   | 'NotificationSetting'
   | 'PasswordManager'
   | 'PrivacyPolicy'
-  | 'HelpCenter';
+  | 'HelpCenter'
+  | 'PaymentMethod'
+  | 'AddCard';
 
 export interface ProfileNavigation {
   navigate: (route: ProfileRoute) => void;
@@ -14,4 +16,6 @@ export interface ProfileNavigation {
   onLogout: () => void;
   /** Нижнее меню: переход на другие разделы приложения */
   onTabPress?: (tab: 'home' | 'chat' | 'profile' | 'calendar') => void;
+  /** Пункт Favorite: список избранных врачей живёт в главном разделе */
+  onOpenFavorites?: () => void;
 }

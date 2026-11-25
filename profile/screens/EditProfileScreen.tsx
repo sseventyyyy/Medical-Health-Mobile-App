@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Alert, StyleSheet, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileLayout from '../components/ProfileLayout';
 import Avatar from '../components/Avatar';
@@ -8,20 +8,27 @@ import PrimaryButton from '../components/PrimaryButton';
 import { colors } from '../theme';
 import { ProfileNavigation } from '../types';
 import { formatDob, isEmail, isPhone } from '../utils';
+import { pickImage, useApp } from '../../src/store';
 
 type Key = 'name' | 'phone' | 'email' | 'dob';
 
 interface Props {
   navigation: ProfileNavigation;
-  avatarUri?: string;
 }
 
-export default function EditProfileScreen({ navigation, avatarUri }: Props) {
-  const [name, setName] = useState('John Doe');
-  const [phone, setPhone] = useState('+123 567 89000');
-  const [email, setEmail] = useState('johndoe@example.com');
-  const [dob, setDob] = useState('');
+export default function EditProfileScreen({ navigation }: Props) {
+  const { user, updateUser } = useApp();
+  const [name, setName] = useState(user.name);
+  const [phone, setPhone] = useState(user.phone);
+  const [email, setEmail] = useState(user.email);
+  const [dob, setDob] = useState(user.dob);
+  const [avatarUri, setAvatarUri] = useState(user.avatarUri);
   const [errors, setErrors] = useState<Partial<Record<Key, string>>>({});
+
+  const changePhoto = async () => {
+    const uri = await pickImage(true).catch(() => undefined);
+    if (uri) setAvatarUri(uri);
+  };
 
   const submit = () => {
     const next: Partial<Record<Key, string>> = {};
@@ -31,6 +38,7 @@ export default function EditProfileScreen({ navigation, avatarUri }: Props) {
     if (dob && dob.replace(/\D/g, '').length !== 8) next.dob = 'Формат DD / MM / YYYY';
     setErrors(next);
     if (Object.keys(next).length === 0) {
+      updateUser({ name: name.trim(), phone: phone.trim(), email: email.trim(), dob, avatarUri });
       Alert.alert('Готово', 'Профиль обновлён');
       navigation.goBack();
     }
@@ -41,14 +49,20 @@ export default function EditProfileScreen({ navigation, avatarUri }: Props) {
       title="Profile"
       onBack={navigation.goBack}
       right={
-        <View style={styles.gear}>
+        <Pressable
+          style={styles.gear}
+          onPress={() => navigation.navigate('Settings')}
+          hitSlop={12}
+          accessibilityRole="button"
+          accessibilityLabel="Settings"
+        >
           <Ionicons name="settings" size={12} color={colors.white} />
-        </View>
+        </Pressable>
       }
       footer={<PrimaryButton title="Update Profile" onPress={submit} />}
     >
       <View style={styles.avatar}>
-        <Avatar uri={avatarUri} />
+        <Avatar uri={avatarUri} onEdit={changePhoto} />
       </View>
       <Field label="Full Name" value={name} onChangeText={setName} error={errors.name} />
       <Field

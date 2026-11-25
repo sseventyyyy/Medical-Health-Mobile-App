@@ -5,6 +5,7 @@ import LogInScreen from './screens/LogInScreen';
 import LogIn2Screen from './screens/LogIn2Screen';
 import SignUpScreen from './screens/SignUpScreen';
 import SetPasswordScreen from './screens/SetPasswordScreen';
+import PrivacyPolicyScreen from '../profile/screens/PrivacyPolicyScreen';
 import { AuthNavigation, AuthRoute } from './types';
 
 interface Props {
@@ -48,6 +49,9 @@ export default function AuthNavigator({
       {current === 'LogIn2' && <LogIn2Screen navigation={navigation} />}
       {current === 'SignUp' && <SignUpScreen navigation={navigation} />}
       {current === 'SetPassword' && <SetPasswordScreen navigation={navigation} />}
+      {current === 'Terms' && (
+        <PrivacyPolicyScreen navigation={{ navigate: () => {}, goBack, onLogout: () => {} }} />
+      )}
     </>
   );
 }
