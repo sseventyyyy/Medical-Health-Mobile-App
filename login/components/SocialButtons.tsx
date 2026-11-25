@@ -4,7 +4,6 @@ import { AntDesign, FontAwesome, Ionicons } from '@expo/vector-icons';
 import { colors } from '../theme';
 
 interface Props {
-  /** false → только отпечаток пальца (экран Log In 2) */
   showProviders?: boolean;
   onGoogle?: () => void;
   onFacebook?: () => void;

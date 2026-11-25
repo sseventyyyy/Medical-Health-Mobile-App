@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, Image, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import ProfileLayout from '../../profile/components/ProfileLayout';
 import BottomTabBar from '../../profile/components/BottomTabBar';
 import { colors } from '../../profile/theme';
 import { MainNav } from '../navigation';
-import { AppointmentStatus, dayName, getDoctor, useApp } from '../store';
+import { AppointmentStatus, dayName, getDoctor, timeMinutes, useApp } from '../store';
 
 const TABS: { key: AppointmentStatus; label: string }[] = [
   { key: 'complete', label: 'Complete' },
@@ -13,20 +13,13 @@ const TABS: { key: AppointmentStatus; label: string }[] = [
   { key: 'cancelled', label: 'Cancelled' },
 ];
 
-/** Вкладка Calendar: все записи пользователя по статусам. */
 export default function ScheduleScreen({ nav }: { nav: MainNav }) {
   const { appointments, setAppointmentStatus } = useApp();
   const [tab, setTab] = useState<AppointmentStatus>('upcoming');
 
   const list = appointments
     .filter((a) => a.status === tab)
-    .sort((a, b) => a.day - b.day);
-
-  const confirmCancel = (id: string, doctorName: string) =>
-    Alert.alert('Cancel appointment', `Cancel your visit to ${doctorName}?`, [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes, cancel', style: 'destructive', onPress: () => setAppointmentStatus(id, 'cancelled') },
-    ]);
+    .sort((a, b) => a.day - b.day || timeMinutes(a.time) - timeMinutes(b.time));
 
   return (
     <ProfileLayout
@@ -86,12 +79,28 @@ export default function ScheduleScreen({ nav }: { nav: MainNav }) {
               </View>
             </View>
             <Text style={styles.note}>{a.note}</Text>
+            {a.review ? (
+              <View style={styles.stars} accessibilityLabel={`Your rating: ${a.review.rating} of 5`}>
+                {[1, 2, 3, 4, 5].map((n) => (
+                  <Ionicons
+                    key={n}
+                    name={n <= (a.review?.rating ?? 0) ? 'star' : 'star-outline'}
+                    size={14}
+                    color={colors.primary}
+                  />
+                ))}
+              </View>
+            ) : null}
 
             <View style={styles.actions}>
               {a.status === 'upcoming' ? (
                 <>
-                  <Pressable style={styles.main} onPress={() => nav.openChat(doctor.id)}>
-                    <Text style={styles.mainText}>Chat</Text>
+                  <Pressable
+                    style={styles.main}
+                    onPress={() => nav.openAppointment(a.id)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.mainText}>Details</Text>
                   </Pressable>
                   <Pressable
                     style={styles.round}
@@ -103,7 +112,7 @@ export default function ScheduleScreen({ nav }: { nav: MainNav }) {
                   </Pressable>
                   <Pressable
                     style={styles.round}
-                    onPress={() => confirmCancel(a.id, doctor.name)}
+                    onPress={() => nav.openCancel(a.id)}
                     accessibilityRole="button"
                     accessibilityLabel="Cancel appointment"
                   >
@@ -112,24 +121,20 @@ export default function ScheduleScreen({ nav }: { nav: MainNav }) {
                 </>
               ) : (
                 <>
-                  <Pressable style={styles.main} onPress={() => nav.openBooking(doctor.id)}>
-                    <Text style={styles.mainText}>Re-Book</Text>
+                  <Pressable
+                    style={[styles.main, styles.secondary]}
+                    onPress={() => nav.openBooking(doctor.id)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={[styles.mainText, styles.secondaryText]}>Re-Book</Text>
                   </Pressable>
-                  {a.status === 'cancelled' ? (
-                    <Pressable
-                      style={[styles.main, styles.secondary]}
-                      onPress={() => setAppointmentStatus(a.id, 'upcoming')}
-                    >
-                      <Text style={[styles.mainText, styles.secondaryText]}>Restore</Text>
-                    </Pressable>
-                  ) : (
-                    <Pressable
-                      style={[styles.main, styles.secondary]}
-                      onPress={() => nav.openChat(doctor.id)}
-                    >
-                      <Text style={[styles.mainText, styles.secondaryText]}>Chat</Text>
-                    </Pressable>
-                  )}
+                  <Pressable
+                    style={styles.main}
+                    onPress={() => nav.openReview(a.id)}
+                    accessibilityRole="button"
+                  >
+                    <Text style={styles.mainText}>{a.review ? 'Edit Review' : 'Add Review'}</Text>
+                  </Pressable>
                 </>
               )}
             </View>
@@ -181,6 +186,7 @@ const styles = StyleSheet.create({
   },
   pillText: { fontSize: 12, color: colors.text },
   note: { fontSize: 12, color: colors.muted, marginTop: 8 },
+  stars: { flexDirection: 'row', gap: 2, marginTop: 6 },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 10 },
   main: {
     flex: 1,

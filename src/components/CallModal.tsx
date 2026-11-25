@@ -15,14 +15,9 @@ interface Props {
   video: boolean;
   name: string;
   avatar: string;
-  /** seconds — сколько длился разговор (0, если не успели соединиться) */
   onEnd: (seconds: number) => void;
 }
 
-/**
- * Экран звонка. Пока нет бэкенда, соединение имитируется:
- * через 2 секунды «врач отвечает» и запускается таймер.
- */
 export default function CallModal({ visible, video, name, avatar, onEnd }: Props) {
   const [connected, setConnected] = useState(false);
   const [seconds, setSeconds] = useState(0);
@@ -30,7 +25,6 @@ export default function CallModal({ visible, video, name, avatar, onEnd }: Props
   const [speaker, setSpeaker] = useState(video);
   const [cameraOn, setCameraOn] = useState(true);
 
-  // Сбрасываем состояние при каждом новом открытии (во время рендера, а не в эффекте).
   const [session, setSession] = useState({ visible, video });
   if (session.visible !== visible || session.video !== video) {
     setSession({ visible, video });

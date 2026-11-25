@@ -1,8 +1,11 @@
 import React, { useMemo, useState } from 'react';
 import { ProfileNavigator, ProfileRoute } from '../profile';
 import { Tab } from '../profile/components/BottomTabBar';
+import PaymentMethodScreen from '../profile/screens/PaymentMethodScreen';
+import AddCardScreen from '../profile/screens/AddCardScreen';
+import { ProfileNavigation } from '../profile/types';
 import { MainNav } from './navigation';
-import { DOCTORS } from './store';
+import { BookingDraft, DOCTORS } from './store';
 import DoctorsScreen from './screens/DoctorsScreen';
 import DoctorsListScreen from './screens/DoctorsListScreen';
 import DoctorInfoScreen from './screens/DoctorInfoScreen';
@@ -10,27 +13,33 @@ import BookingScreen from './screens/BookingScreen';
 import ScheduleScreen from './screens/ScheduleScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
 import ChatScreen from './screens/ChatScreen';
+import AppointmentScreen from './screens/AppointmentScreen';
+import CancelAppointmentScreen from './screens/CancelAppointmentScreen';
+import ReviewScreen from './screens/ReviewScreen';
+import PaymentScreen from './screens/PaymentScreen';
+import PaymentSuccessScreen from './screens/PaymentSuccessScreen';
 
 interface Props {
   onLogout: () => void;
 }
 
-/** Экраны, которые открываются поверх текущей вкладки. */
 type Overlay =
   | { name: 'notifications' }
   | { name: 'doctors'; favoritesOnly: boolean }
   | { name: 'doctor'; doctorId: string }
   | { name: 'chat'; doctorId: string }
-  | { name: 'booking'; doctorId: string };
+  | { name: 'booking'; doctorId: string; day?: number; draft?: BookingDraft }
+  | { name: 'payment'; draft: BookingDraft }
+  | { name: 'paymentSuccess'; appointmentId: string }
+  | { name: 'paymentMethod' }
+  | { name: 'addCard' }
+  | { name: 'appointment'; appointmentId: string }
+  | { name: 'cancel'; appointmentId: string }
+  | { name: 'review'; appointmentId: string };
 
-/**
- * Главный раздел после входа: вкладки нижнего меню + стек экранов поверх них.
- * Временное решение в стиле AuthNavigator/ProfileNavigator — до перехода на Expo Router.
- */
 export default function MainNavigator({ onLogout }: Props) {
   const [tab, setTab] = useState<Tab>('home');
   const [stack, setStack] = useState<Overlay[]>([]);
-  // С какого экрана открыть профиль: шестерёнка на Home ведёт сразу в Settings.
   const [profileStart, setProfileStart] = useState<ProfileRoute>('Profile');
 
   const nav = useMemo<MainNav>(() => {
@@ -51,12 +60,33 @@ export default function MainNavigator({ onLogout }: Props) {
       openDoctors: (favoritesOnly = false) => push({ name: 'doctors', favoritesOnly }),
       openDoctor: (doctorId) => push({ name: 'doctor', doctorId }),
       openChat: (doctorId) => push({ name: 'chat', doctorId }),
-      openBooking: (doctorId) => push({ name: 'booking', doctorId }),
+      openBooking: (doctorId, day) => push({ name: 'booking', doctorId, day }),
+      openPayment: (draft) =>
+        setStack((s) => [
+          ...s.map((o) => (o.name === 'booking' && o.doctorId === draft.doctorId ? { ...o, draft } : o)),
+          { name: 'payment', draft },
+        ]),
+      finishPayment: (appointmentId) => {
+        setTab('calendar');
+        setStack([{ name: 'paymentSuccess', appointmentId }]);
+      },
+      openPaymentMethod: () => push({ name: 'paymentMethod' }),
+      openAppointment: (appointmentId) => push({ name: 'appointment', appointmentId }),
+      openCancel: (appointmentId) => push({ name: 'cancel', appointmentId }),
+      openReview: (appointmentId) => push({ name: 'review', appointmentId }),
     };
   }, []);
 
   const top = stack[stack.length - 1];
   if (top) {
+    const paymentNav: ProfileNavigation = {
+      navigate: (route) => {
+        if (route === 'AddCard') setStack((s) => [...s, { name: 'addCard' }]);
+      },
+      goBack: nav.back,
+      onLogout,
+    };
+
     switch (top.name) {
       case 'notifications':
         return <NotificationsScreen nav={nav} />;
@@ -67,11 +97,31 @@ export default function MainNavigator({ onLogout }: Props) {
       case 'chat':
         return <ChatScreen key={top.doctorId} nav={nav} doctorId={top.doctorId} />;
       case 'booking':
-        return <BookingScreen nav={nav} doctorId={top.doctorId} />;
+        return (
+          <BookingScreen
+            nav={nav}
+            doctorId={top.doctorId}
+            initialDay={top.day}
+            initialDraft={top.draft}
+          />
+        );
+      case 'payment':
+        return <PaymentScreen nav={nav} draft={top.draft} />;
+      case 'paymentSuccess':
+        return <PaymentSuccessScreen nav={nav} appointmentId={top.appointmentId} />;
+      case 'paymentMethod':
+        return <PaymentMethodScreen navigation={paymentNav} />;
+      case 'addCard':
+        return <AddCardScreen navigation={paymentNav} />;
+      case 'appointment':
+        return <AppointmentScreen nav={nav} appointmentId={top.appointmentId} />;
+      case 'cancel':
+        return <CancelAppointmentScreen nav={nav} appointmentId={top.appointmentId} />;
+      case 'review':
+        return <ReviewScreen nav={nav} appointmentId={top.appointmentId} />;
     }
   }
 
-  // На вкладках стек пуст, поэтому «назад» ведёт на Home.
   const tabNav: MainNav = { ...nav, back: () => nav.openTab('home') };
 
   switch (tab) {

@@ -9,17 +9,10 @@ import PrivacyPolicyScreen from '../profile/screens/PrivacyPolicyScreen';
 import { AuthNavigation, AuthRoute } from './types';
 
 interface Props {
-  /** Вызывается после успешного входа / регистрации */
   onAuthSuccess?: () => void;
-  /** 'LogIn2' — вариант экрана «Hello!» */
   initialRoute?: AuthRoute;
 }
 
-/**
- * Лёгкий навигатор внутри папки login — без новых зависимостей.
- * Если в других ветках появится React Navigation, достаточно заменить
- * этот файл: экраны зависят только от интерфейса AuthNavigation.
- */
 export default function AuthNavigator({
   onAuthSuccess = () => {},
   initialRoute = 'Welcome',

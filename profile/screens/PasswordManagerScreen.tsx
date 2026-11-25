@@ -19,7 +19,6 @@ export default function PasswordManagerScreen({
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
   const [confirm, setConfirm] = useState('');
-  // «Forgot Password?»: задаём новый пароль без ввода текущего.
   const [forgot, setForgot] = useState(false);
   const [errors, setErrors] = useState<Partial<Record<Key, string>>>({});
 

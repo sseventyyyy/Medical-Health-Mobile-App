@@ -1,8 +1,6 @@
 import React, { createContext, ReactNode, useCallback, useContext, useMemo, useState } from 'react';
 import * as ImagePicker from 'expo-image-picker';
 
-// Общее состояние приложения до появления бэкенда: всё хранится в памяти.
-
 export interface Doctor {
   id: string;
   name: string;
@@ -66,18 +64,58 @@ export const DOCTORS: Doctor[] = [
   },
 ];
 
-export const DAYS = [
-  { num: 9, label: 'MON', name: 'Monday' },
-  { num: 10, label: 'TUE', name: 'Tuesday' },
-  { num: 11, label: 'WED', name: 'Wednesday' },
-  { num: 12, label: 'THU', name: 'Thursday' },
-  { num: 13, label: 'FRI', name: 'Friday' },
-  { num: 14, label: 'SAT', name: 'Saturday' },
-];
+export const MONTH = { name: 'November', year: 2026, days: 30 };
 export const TODAY = 11;
+
+const WEEKDAYS = [
+  { label: 'MON', name: 'Monday' },
+  { label: 'TUE', name: 'Tuesday' },
+  { label: 'WED', name: 'Wednesday' },
+  { label: 'THU', name: 'Thursday' },
+  { label: 'FRI', name: 'Friday' },
+  { label: 'SAT', name: 'Saturday' },
+  { label: 'SUN', name: 'Sunday' },
+];
+export const WEEKDAY_LABELS = WEEKDAYS.map((w) => w.label);
+
+export const weekdayIndex = (num: number): number => (((num - 2) % 7) + 7) % 7;
+export const weekday = (num: number) => WEEKDAYS[weekdayIndex(num)];
+export const isBookableDay = (num: number): boolean =>
+  num >= TODAY && num <= MONTH.days && weekdayIndex(num) !== 6;
+
+export const DAYS = [9, 10, 11, 12, 13, 14].map((num) => ({ num, ...weekday(num) }));
 export const TIMES = ['9 AM', '10 AM', '11 AM', '12 PM'];
+export const SLOTS = Array.from({ length: 15 }, (_, i) => {
+  const minutes = 9 * 60 + i * 30;
+  const h = Math.floor(minutes / 60);
+  return `${h > 12 ? h - 12 : h}:${minutes % 60 === 0 ? '00' : '30'} ${h >= 12 ? 'PM' : 'AM'}`;
+});
+
+export const timeMinutes = (time: string): number => {
+  const m = /^(\d+)(?::(\d+))?\s*(AM|PM)$/i.exec(time.trim());
+  if (!m) return 0;
+  const h = (Number(m[1]) % 12) + (m[3].toUpperCase() === 'PM' ? 12 : 0);
+  return h * 60 + Number(m[2] ?? 0);
+};
+export const hourLabel = (time: string): string => time.replace(/:\d+/, '');
+
+export const CONSULTATION_PRICE = 100;
+export const CONSULTATION_MINUTES = 30;
 
 export type AppointmentStatus = 'upcoming' | 'complete' | 'cancelled';
+export type Gender = 'Male' | 'Female' | 'Other';
+
+export interface Patient {
+  forWho: 'yourself' | 'another';
+  fullName: string;
+  age: string;
+  gender: Gender;
+}
+
+export interface Review {
+  rating: number;
+  comment: string;
+}
 
 export interface Appointment {
   id: string;
@@ -86,16 +124,22 @@ export interface Appointment {
   time: string;
   note: string;
   status: AppointmentStatus;
+  patient?: Patient;
+  paidWith?: string;
+  cancelReason?: string;
+  review?: Review;
 }
+
+export type BookingDraft = Pick<Appointment, 'doctorId' | 'day' | 'time' | 'note'> & {
+  patient: Patient;
+};
 
 export interface ChatMessage {
   id: string;
   from: 'me' | 'doctor';
   time: string;
   text?: string;
-  /** Голосовое сообщение: длительность в секундах */
   voice?: number;
-  /** Файл записи; у моковых сообщений врача его нет */
   audioUri?: string;
   imageUri?: string;
 }
@@ -128,13 +172,13 @@ const INITIAL_APPOINTMENTS: Appointment[] = [
     id: 'a1',
     doctorId: '1',
     day: 11,
-    time: '10 AM',
+    time: '10:00 AM',
     note: 'Treatment and prevention of skin and photodermatitis.',
     status: 'upcoming',
   },
-  { id: 'a2', doctorId: '2', day: 13, time: '11 AM', note: 'Follow-up visit.', status: 'upcoming' },
-  { id: 'a3', doctorId: '3', day: 14, time: '9 AM', note: 'Consultation.', status: 'upcoming' },
-  { id: 'a4', doctorId: '4', day: 9, time: '12 PM', note: 'Patch test results.', status: 'complete' },
+  { id: 'a2', doctorId: '2', day: 13, time: '11:00 AM', note: 'Follow-up visit.', status: 'upcoming' },
+  { id: 'a3', doctorId: '3', day: 14, time: '9:00 AM', note: 'Consultation.', status: 'upcoming' },
+  { id: 'a4', doctorId: '4', day: 9, time: '12:00 PM', note: 'Patch test results.', status: 'complete' },
 ];
 
 const INITIAL_CHATS: Record<string, ChatMessage[]> = {
@@ -168,13 +212,14 @@ interface Store {
   favorites: string[];
   toggleFavorite: (doctorId: string) => void;
   appointments: Appointment[];
-  book: (doctorId: string, day: number, time: string, note: string) => void;
+  book: (draft: BookingDraft, paidWith: string) => string;
   setAppointmentStatus: (id: string, status: AppointmentStatus) => void;
+  cancelAppointment: (id: string, reason: string) => void;
+  addReview: (id: string, review: Review) => void;
   chats: Record<string, ChatMessage[]>;
   addMessage: (doctorId: string, message: ChatMessage) => void;
   cards: Card[];
   addCard: (card: Omit<Card, 'id'>) => void;
-  /** 'card:<id>' | 'apple' | 'paypal' | 'google' */
   paymentMethod: string;
   setPaymentMethod: (method: string) => void;
 }
@@ -197,19 +242,31 @@ export function AppProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const book = useCallback(
-    (doctorId: string, day: number, time: string, note: string) =>
-      setAppointments((prev) => [
-        ...prev,
-        { id: `a-${Date.now()}`, doctorId, day, time, note, status: 'upcoming' },
-      ]),
+  const book = useCallback((draft: BookingDraft, paidWith: string) => {
+    const id = `a-${Date.now()}`;
+    setAppointments((prev) => [...prev, { ...draft, id, paidWith, status: 'upcoming' }]);
+    return id;
+  }, []);
+
+  const patchAppointment = useCallback(
+    (id: string, patch: Partial<Appointment>) =>
+      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, ...patch } : a))),
     [],
   );
 
   const setAppointmentStatus = useCallback(
-    (id: string, status: AppointmentStatus) =>
-      setAppointments((prev) => prev.map((a) => (a.id === id ? { ...a, status } : a))),
-    [],
+    (id: string, status: AppointmentStatus) => patchAppointment(id, { status }),
+    [patchAppointment],
+  );
+
+  const cancelAppointment = useCallback(
+    (id: string, reason: string) => patchAppointment(id, { status: 'cancelled', cancelReason: reason }),
+    [patchAppointment],
+  );
+
+  const addReview = useCallback(
+    (id: string, review: Review) => patchAppointment(id, { review }),
+    [patchAppointment],
   );
 
   const addMessage = useCallback(
@@ -233,6 +290,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appointments,
       book,
       setAppointmentStatus,
+      cancelAppointment,
+      addReview,
       chats,
       addMessage,
       cards,
@@ -248,6 +307,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       appointments,
       book,
       setAppointmentStatus,
+      cancelAppointment,
+      addReview,
       chats,
       addMessage,
       cards,
@@ -267,12 +328,27 @@ export function useApp(): Store {
 
 export const getDoctor = (id: string): Doctor => DOCTORS.find((d) => d.id === id) ?? DOCTORS[0];
 
-export const dayName = (num: number): string => {
-  const d = DAYS.find((x) => x.num === num);
-  return d ? `${d.num} ${d.name}` : String(num);
+export const timeNow = (): string => {
+  const d = new Date();
+  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
 };
 
-/** Выбор фото из галереи; undefined — если пользователь отменил. */
+export const dayName = (num: number): string => `${num} ${weekday(num).name}`;
+export const dateLabel = (num: number): string => `${MONTH.name} ${num}, ${MONTH.year}`;
+
+const WALLET_LABELS: Record<string, string> = {
+  apple: 'Apple Pay',
+  paypal: 'Paypal',
+  google: 'Google Pay',
+};
+export const paymentLabel = (method: string, cards: Card[]): string => {
+  if (method.startsWith('card:')) {
+    const card = cards.find((c) => `card:${c.id}` === method);
+    return card ? `Card •••• ${card.last4}` : 'Card';
+  }
+  return WALLET_LABELS[method] ?? method;
+};
+
 export async function pickImage(square = false): Promise<string | undefined> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'],

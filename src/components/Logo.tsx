@@ -6,16 +6,10 @@ const BLUE = '#2563FF';
 const WHITE = '#FFFFFF';
 
 interface Props {
-  /** "onBlue" — белый логотип для синего фона (Splash), "onWhite" — синий (Welcome) */
   variant?: 'onBlue' | 'onWhite';
   size?: number;
 }
 
-/**
- * Логотип Skin First: крест с листьями и подпись.
- * Собран из View и иконок, пока нет экспорта логотипа из Figma.
- * Когда появится PNG/SVG, достаточно заменить содержимое этого компонента.
- */
 export default function Logo({ variant = 'onWhite', size = 110 }: Props) {
   const fg = variant === 'onBlue' ? WHITE : BLUE;
   const bg = variant === 'onBlue' ? BLUE : WHITE;

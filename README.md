@@ -66,12 +66,12 @@ src/
 | 2. Welcome Screen | ✅ дайын |
 | 3. Login, Sign Up | ✅ Log In, Sign Up, Set Password. «Hello!» экраны жазылған, бірақ оған өтетін жол жоқ |
 | 4. Home | ✅ дайын, қосылған |
-| 5. Doctors, Favorite | ✅ тізім, таңдаулылар, Doctor Info (қарапайым нұсқа) |
+| 5. Doctors, Favorite | ✅ тізім, таңдаулылар |
 | 6. Profile | ✅ 9 экранның бәрі |
 | 7. Notifications, Chat | ✅ дайын |
-| 8. Schedule | ⚠️ қарапайым нұсқа: күн мен уақыт таңдап жазылу (`BookingScreen`) |
-| 9. Appointment | ⚠️ қарапайым нұсқа: Calendar қойындысы — Complete / Upcoming / Cancelled |
-| 10. Payment | ⚠️ Payment Method және Add Card бар; төлемнің өзі жоқ |
+| 8. Schedule | ✅ Doctor Info (ай күнтізбесі), жазылу (`BookingScreen`: күн, уақыт, Patient Details), Your Appointment (`AppointmentScreen`) |
+| 9. Appointment | ✅ All Appointment (`ScheduleScreen`), Cancel Appointment, Review |
+| 10. Payment | ✅ Payment Method, Add Card, Payment, Congratulation. Төлем — имитация, нақты ақша алынбайды |
 
 ### Соңғы қосылғандар
 

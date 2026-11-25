@@ -9,7 +9,6 @@ interface Props {
   navigation: AuthNavigation;
 }
 
-/** Welcome из макета (раздел 2): логотип, описание и кнопки Log In / Sign Up. */
 export default function WelcomeScreen({ navigation }: Props) {
   return (
     <View style={styles.container}>

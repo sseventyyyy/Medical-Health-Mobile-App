@@ -1,6 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
 import {
-  Alert,
   View,
   Text,
   Image,
@@ -14,7 +13,18 @@ import {
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import DoctorCard from '../components/DoctorCard';
 import { MainNav } from '../navigation';
-import { DAYS, DOCTORS, TIMES, TODAY, dayName, getDoctor, useApp } from '../store';
+import {
+  Appointment,
+  DAYS,
+  DOCTORS,
+  TIMES,
+  TODAY,
+  dayName,
+  getDoctor,
+  hourLabel,
+  timeMinutes,
+  useApp,
+} from '../store';
 
 const BLUE = '#2F66F5';
 const LIGHT = '#CBD5FF';
@@ -22,7 +32,6 @@ const TEXT_DARK = '#1B1B1F';
 
 const ratingValue = (rating: string) => Number(rating.replace(',', '.'));
 
-/** Home: приветствие, календарь с записями и список врачей. */
 export default function DoctorsScreen({ nav }: { nav: MainNav }) {
   const { user, favorites, toggleFavorite, appointments, setAppointmentStatus } = useApp();
   const [selectedDay, setSelectedDay] = useState(TODAY);
@@ -44,11 +53,15 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
     return list;
   }, [query, sortByRating]);
 
-  const confirmCancel = (id: string, doctorName: string) =>
-    Alert.alert('Cancel appointment', `Cancel your visit to ${doctorName}?`, [
-      { text: 'No', style: 'cancel' },
-      { text: 'Yes, cancel', style: 'destructive', onPress: () => setAppointmentStatus(id, 'cancelled') },
-    ]);
+  const hours = [...new Set([...TIMES, ...dayAppointments.map((a) => hourLabel(a.time))])].sort(
+    (a, b) => timeMinutes(a) - timeMinutes(b),
+  );
+  const timeline = hours.flatMap((time): { key: string; time: string; a?: Appointment }[] => {
+    const inHour = dayAppointments
+      .filter((a) => hourLabel(a.time) === time)
+      .sort((a, b) => timeMinutes(a.time) - timeMinutes(b.time));
+    return inHour.length > 0 ? inHour.map((a) => ({ key: a.id, time, a })) : [{ key: time, time }];
+  });
 
   return (
     <View style={styles.screen}>
@@ -96,7 +109,6 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
           </TouchableOpacity>
         </View>
 
-        {/* Быстрые кнопки + поиск */}
         <View style={styles.searchRow}>
           <TouchableOpacity
             style={styles.quickBtn}
@@ -145,7 +157,6 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
           </View>
         </View>
 
-        {/* Календарь */}
         <View style={styles.calendarBlock}>
           <View style={styles.daysRow}>
             {DAYS.map((d) => {
@@ -176,17 +187,16 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
               {selectedDay === TODAY ? ' - Today' : ''}
             </Text>
 
-            {TIMES.map((time) => {
-              const a = dayAppointments.find((x) => x.time === time);
+            {timeline.map(({ key, time, a }) => {
               const doctor = a ? getDoctor(a.doctorId) : null;
               return (
-                <View key={time} style={styles.timeRow}>
+                <View key={key} style={styles.timeRow}>
                   <Text style={styles.timeLabel}>{time}</Text>
                   {a && doctor ? (
                     <TouchableOpacity
                       style={styles.appointment}
                       activeOpacity={0.8}
-                      onPress={() => nav.openDoctor(doctor.id)}
+                      onPress={() => nav.openAppointment(a.id)}
                     >
                       <View style={styles.appointmentTop}>
                         <Text style={styles.appointmentName} numberOfLines={1}>
@@ -208,7 +218,7 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
                         <TouchableOpacity
                           style={[styles.miniCircle, { marginLeft: 8 }]}
                           hitSlop={8}
-                          onPress={() => confirmCancel(a.id, doctor.name)}
+                          onPress={() => nav.openCancel(a.id)}
                           accessibilityRole="button"
                           accessibilityLabel="Cancel appointment"
                         >
@@ -232,7 +242,6 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
           </View>
         </View>
 
-        {/* Список врачей */}
         <View style={styles.list}>
           {doctors.length === 0 ? <Text style={styles.empty}>No doctors found</Text> : null}
           {doctors.map((doc) => (
@@ -248,7 +257,6 @@ export default function DoctorsScreen({ nav }: { nav: MainNav }) {
         </View>
       </ScrollView>
 
-      {/* Нижняя навигация */}
       <View style={styles.tabBar}>
         <TouchableOpacity onPress={() => nav.openTab('home')} accessibilityLabel="home tab">
           <Ionicons name="home" size={28} color="#fff" />
@@ -271,7 +279,6 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: '#fff' },
   scrollContent: { paddingBottom: 110 },
 
-  // Шапка
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -293,7 +300,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  // Поиск
   searchRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -324,7 +330,6 @@ const styles = StyleSheet.create({
   filterBtnOn: { backgroundColor: BLUE },
   searchInput: { flex: 1, paddingHorizontal: 8, paddingVertical: 0, fontSize: 14, color: TEXT_DARK },
 
-  // Календарь
   calendarBlock: {
     backgroundColor: LIGHT,
     paddingHorizontal: 12,
@@ -389,11 +394,9 @@ const styles = StyleSheet.create({
   bookLink: { alignSelf: 'center', marginTop: 6 },
   bookLinkText: { fontSize: 12, fontWeight: '600', color: BLUE },
 
-  // Список врачей
   list: { paddingHorizontal: 12, paddingTop: 14 },
   empty: { textAlign: 'center', color: TEXT_DARK, marginVertical: 16 },
 
-  // Нижняя навигация
   tabBar: {
     position: 'absolute',
     left: 16,

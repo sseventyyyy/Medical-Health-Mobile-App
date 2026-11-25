@@ -29,15 +29,10 @@ import BottomTabBar from '../../profile/components/BottomTabBar';
 import { colors } from '../../profile/theme';
 import CallModal, { formatSeconds } from '../components/CallModal';
 import { MainNav } from '../navigation';
-import { ChatMessage, getDoctor, pickImage, useApp } from '../store';
+import { ChatMessage, getDoctor, pickImage, timeNow, useApp } from '../store';
 
 const TOP_PADDING =
   Platform.OS === 'android' ? (RNStatusBar.currentHeight ?? 24) + 12 : 56;
-
-const timeNow = () => {
-  const d = new Date();
-  return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
-};
 
 function useKeyboardVisible() {
   const [visible, setVisible] = useState(false);
@@ -63,7 +58,6 @@ export default function ChatScreen({ nav, doctorId }: Props) {
   const { chats, addMessage } = useApp();
   const doctor = getDoctor(doctorId);
   const messages = chats[doctor.id] ?? [];
-  // "Dr. Olivia Turner, M.D." → "Dr. Olivia Turner" / "Dr. Olivia"
   const doctorName = doctor.name.split(',')[0];
   const shortName = doctorName.split(' ').slice(0, 2).join(' ');
 
@@ -75,15 +69,12 @@ export default function ChatScreen({ nav, doctorId }: Props) {
   const listRef = useRef<FlatList<ChatMessage>>(null);
   const replyTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Воспроизведение: настоящие записи — через expo-audio,
-  // моковое голосовое врача (без файла) — имитация по таймеру.
   const player = useAudioPlayer(null);
   const playerStatus = useAudioPlayerStatus(player);
   const [playingId, setPlayingId] = useState<string | null>(null);
   const [mockPos, setMockPos] = useState(0);
   const playing = messages.find((m) => m.id === playingId);
 
-  // Запись голосового сообщения
   const recorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
   const recorderState = useAudioRecorderState(recorder, 500);
   const [recording, setRecording] = useState(false);
@@ -105,7 +96,6 @@ export default function ChatScreen({ nav, doctorId }: Props) {
   const mockDuration = playing && !playing.audioUri ? (playing.voice ?? 0) : 0;
   useEffect(() => {
     if (!mockDuration) return;
-    // togglePlay обнуляет mockPos перед стартом, поэтому локальный счётчик тоже идёт с нуля.
     let pos = 0;
     const tick = setInterval(() => {
       pos += 0.5;
@@ -118,9 +108,7 @@ export default function ChatScreen({ nav, doctorId }: Props) {
   const stopPlayback = () => {
     try {
       player.pause();
-    } catch {
-      // плеер ещё ничего не загружал
-    }
+    } catch {}
     setPlayingId(null);
   };
 
@@ -146,7 +134,6 @@ export default function ChatScreen({ nav, doctorId }: Props) {
     return m.voice ? Math.min(1, mockPos / m.voice) : 0;
   };
 
-  // Демо до появления бэкенда: врач «печатает» и присылает шаблонный ответ.
   const replyLater = () => {
     setTyping(true);
     if (replyTimer.current) clearTimeout(replyTimer.current);
@@ -206,7 +193,6 @@ export default function ChatScreen({ nav, doctorId }: Props) {
     setRecording(false);
     try {
       await recorder.stop();
-      // Возвращаем обычный режим, иначе на iOS звук пойдёт в разговорный динамик.
       await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
     } catch {
       return;

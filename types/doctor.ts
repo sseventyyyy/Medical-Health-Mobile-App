@@ -3,8 +3,8 @@ export interface Doctor {
   fullName: string;
   specialty: string;
   experienceYears: number;
-  rating: number; // 0..5
-  price: number; // тг за приём
+  rating: number;
+  price: number;
   clinic: string;
   photoUrl?: string;
 }

@@ -6,7 +6,6 @@ interface Props {
   title: string;
   onPress: () => void;
   width?: number | `${number}%`;
-  /** secondary — светло-синяя кнопка с синим текстом (Sign Up на Welcome) */
   variant?: 'primary' | 'secondary';
 }
 

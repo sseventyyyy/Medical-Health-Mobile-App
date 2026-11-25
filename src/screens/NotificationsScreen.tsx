@@ -16,11 +16,9 @@ interface AppNotification {
   text: string;
   ago: string;
   read: boolean;
-  /** Куда ведёт нажатие на уведомление */
   target: 'calendar' | 'chat';
 }
 
-// Моковые данные до появления API. Порядок групп = порядок в массиве.
 const INITIAL: AppNotification[] = [
   {
     id: '1',
@@ -74,7 +72,6 @@ const INITIAL: AppNotification[] = [
   },
 ];
 
-// Прочитанное храним вне компонента, чтобы оно не сбрасывалось при повторном открытии экрана.
 let saved = INITIAL;
 
 export default function NotificationsScreen({ nav }: { nav: MainNav }) {

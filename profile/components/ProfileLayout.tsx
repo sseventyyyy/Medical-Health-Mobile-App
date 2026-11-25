@@ -20,7 +20,7 @@ interface Props {
   scroll?: boolean;
 }
 
-const TOP_PADDING =
+export const TOP_PADDING =
   Platform.OS === 'android' ? (StatusBar.currentHeight ?? 24) + 12 : 56;
 
 export default function ProfileLayout({

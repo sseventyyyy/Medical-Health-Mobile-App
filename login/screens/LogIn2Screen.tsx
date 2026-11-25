@@ -9,7 +9,6 @@ import { colors } from '../theme';
 import { AuthNavigation } from '../types';
 import { isEmailOrPhone, isStrongPassword } from '../validation';
 
-/** Вариант «Hello!» — без описания и только с отпечатком пальца */
 export default function LogIn2Screen({ navigation }: { navigation: AuthNavigation }) {
   const [login, setLogin] = useState('');
   const [password, setPassword] = useState('');

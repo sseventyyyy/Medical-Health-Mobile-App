@@ -5,15 +5,9 @@ import Logo from '../components/Logo';
 
 interface Props {
   onFinish: () => void;
-  /** Сколько показывать экран, мс */
   duration?: number;
 }
 
-/**
- * Splash из макета (раздел 1): синий фон и белый логотип.
- * Это экран приложения, а не нативный splash: Expo Go нативный splash не показывает.
- * Нажатие пропускает ожидание.
- */
 export default function SplashScreen({ onFinish, duration = 1500 }: Props) {
   useEffect(() => {
     const timer = setTimeout(onFinish, duration);

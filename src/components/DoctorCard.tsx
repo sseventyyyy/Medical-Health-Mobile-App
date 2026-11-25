@@ -10,13 +10,11 @@ const TEXT_DARK = '#1B1B1F';
 interface Props {
   doctor: Doctor;
   favorite: boolean;
-  /** Нажатие на карточку и на кнопку «?» — информация о враче */
   onPress: () => void;
   onToggleFavorite: () => void;
   onChat: () => void;
 }
 
-/** Карточка врача: используется на Home, в списке врачей и в избранном. */
 export default function DoctorCard({ doctor, favorite, onPress, onToggleFavorite, onChat }: Props) {
   return (
     <Pressable

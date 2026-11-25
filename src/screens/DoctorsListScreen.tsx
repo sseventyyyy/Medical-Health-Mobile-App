@@ -9,11 +9,9 @@ import { DOCTORS, useApp } from '../store';
 
 interface Props {
   nav: MainNav;
-  /** true — экран открыт как «Favorite» */
   favoritesOnly?: boolean;
 }
 
-/** Раздел 5 макета: список всех врачей и избранное. */
 export default function DoctorsListScreen({ nav, favoritesOnly = false }: Props) {
   const { favorites, toggleFavorite } = useApp();
   const [onlyFav, setOnlyFav] = useState(favoritesOnly);

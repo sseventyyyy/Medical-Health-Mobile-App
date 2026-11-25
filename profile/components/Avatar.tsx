@@ -6,7 +6,6 @@ import { colors } from '../theme';
 interface Props {
   uri?: string;
   size?: number;
-  /** Нажатие на аватар / карандаш — смена фото */
   onEdit?: () => void;
 }
 

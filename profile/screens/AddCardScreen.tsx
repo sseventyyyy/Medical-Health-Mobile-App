@@ -9,11 +9,9 @@ import { useApp } from '../../src/store';
 
 type Key = 'holder' | 'number' | 'expiry' | 'cvv';
 
-/** "1234567812345678" → "1234 5678 1234 5678" */
 const formatNumber = (raw: string) =>
   raw.replace(/\D/g, '').slice(0, 16).replace(/(.{4})(?=.)/g, '$1 ');
 
-/** "0428" → "04/28" */
 const formatExpiry = (raw: string) => {
   const d = raw.replace(/\D/g, '').slice(0, 4);
   return d.length > 2 ? `${d.slice(0, 2)}/${d.slice(2)}` : d;
@@ -38,7 +36,6 @@ export default function AddCardScreen({ navigation }: { navigation: ProfileNavig
     if (cvv.length !== 3) e.cvv = '3 цифры';
     setErrors(e);
     if (Object.keys(e).length === 0) {
-      // CVV и полный номер нигде не сохраняем — только последние 4 цифры.
       addCard({ holder: holder.trim(), last4: digits.slice(-4), expiry });
       navigation.goBack();
     }
